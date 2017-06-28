@@ -19,5 +19,9 @@
     <!--android:layout_gravity="center_horizontal"-->
     <!--android:layout_marginBottom="8dp" />-->
 
+    <ImageView
+        android:id="@+id/pre_iv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>
