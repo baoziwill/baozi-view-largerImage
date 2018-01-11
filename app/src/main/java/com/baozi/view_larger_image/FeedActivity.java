@@ -14,24 +14,24 @@ import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class FeedActivity extends AppCompatActivity {
 
 
-    @Bind(R.id.pic_list)
+    @BindView(R.id.pic_list)
     TextView picList;
-    @Bind(R.id.img_1)
+    @BindView(R.id.img_1)
     ImageView img1;
-    @Bind(R.id.img_2)
+    @BindView(R.id.img_2)
     ImageView img2;
-    @Bind(R.id.img_3)
+    @BindView(R.id.img_3)
     ImageView img3;
-    @Bind(R.id.content)
+    @BindView(R.id.content)
     LinearLayout content;
-    @Bind(R.id.container)
+    @BindView(R.id.container)
     LinearLayout container;
 //
 //    String[] source = new String[]{

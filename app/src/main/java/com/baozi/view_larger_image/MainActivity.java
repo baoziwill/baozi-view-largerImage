@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.pic_list:
 
-                FeedActivity.startActivity(this);
+//                FeedActivity.startActivity(this);
                 break;
         }
     }

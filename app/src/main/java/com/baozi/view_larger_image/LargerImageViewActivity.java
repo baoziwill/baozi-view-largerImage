@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
@@ -36,7 +37,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 
 /**
@@ -72,11 +73,11 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
 
     private ColorDrawable colorDrawable;
 
-    @Bind(R.id.pre_iv)
+    @BindView(R.id.pre_iv)
     ImageView preIv;
-    @Bind(R.id.rootView)
+    @BindView(R.id.rootView)
     RelativeLayout rootView;
-    @Bind(R.id.viewPager)
+    @BindView(R.id.viewPager)
     NormalViewPager viewPager;
     //    @Bind(R.id.dot_index)
 //    PagerDotIndex dotIndex;
@@ -89,6 +90,7 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
     private int screenHeight;
     private int imageHeight;
     private int imageWidth;
+    private int currentItem;
 
 
     public static void startActivity(Context context, ArrayList<ImageInfo> imageInfoList, int index, ArrayList<String> arr) {
@@ -121,33 +123,7 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
             infoList = getIntent().getParcelableArrayListExtra(IMAGE_INFO);
         }
 
-
         colorDrawable = new ColorDrawable(Color.BLACK);
-
-
-//        if (savedInstanceState == null) {
-//            ViewTreeObserver observer = preIv.getViewTreeObserver();
-//            observer.addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-//                @Override
-//                public boolean onPreDraw() {
-//                    preIv.getViewTreeObserver().removeOnPreDrawListener(this);
-//                    //坐标的获取设置
-//                    int[] screenLocation = new int[2];
-//                    preIv.getLocationOnScreen(screenLocation);
-//                    mLeftDelta = intentLeft - screenLocation[0];
-//                    mTopDelta = intentTop - screenLocation[1];
-//
-//                    mWidthScale = (float) intentWidth / preIv.getWidth();
-//                    mHeightScale = (float) intentHeight / preIv.getHeight();
-//                    //开启缩放动画
-//                    enterAnimation();
-//
-//                    return true;
-//                }
-//            });
-//        }
-
-
     }
 
     //进入动画
@@ -173,24 +149,6 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
 
 
     private void initViews() {
-        imageAdapter = new ImageAdapter(source);
-        viewPager.setAdapter(imageAdapter);
-//        dotIndex.setViewPager(viewPager, source.size());
-//
-        viewPager.setCurrentItem(index);
-        viewPager.getViewTreeObserver().addOnPreDrawListener(this);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        ButterKnife.unbind(this);
-
-    }
-
-    @Override
-    public boolean onPreDraw() {
-        rootView.getViewTreeObserver().removeOnPreDrawListener(this);
 
         DisplayMetrics metric = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metric);
@@ -198,6 +156,30 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
         screenHeight = metric.heightPixels;
 
 
+        imageAdapter = new ImageAdapter(source);
+        viewPager.setAdapter(imageAdapter);
+//        dotIndex.setViewPager(viewPager, source.size());
+//
+        viewPager.setCurrentItem(index);
+        viewPager.getViewTreeObserver().addOnPreDrawListener(this);
+        viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+                currentItem = position;
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+//        ButterKnife.(this);
+
+    }
+
+    @Override
+    public boolean onPreDraw() {
+        rootView.getViewTreeObserver().removeOnPreDrawListener(this);
         final ImageView imageView = (ImageView) imageAdapter.getPrimaryItem();
 
         final ImageInfo imageData = infoList.get(index);
@@ -224,6 +206,61 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
     }
 
     /**
+     * activity的退场动画
+     */
+    public void finishActivityAnim() {
+//        final View view = imagePreviewAdapter.getPrimaryItem();
+        final ImageView imageView = (ImageView) imageAdapter.getPrimaryItem();
+        final ImageInfo imageData = infoList.get(currentItem);
+        final float vx = imageData.imageViewWidth * 1.0f / screenWidth;
+        final float vy = imageData.imageViewHeight * 1.0f / screenHeight;
+
+        final ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1.0f);
+        valueAnimator.addUpdateListener(animation -> {
+            long duration = animation.getDuration();
+            long playTime = animation.getCurrentPlayTime();
+            float fraction = duration > 0 ? (float) playTime / duration : 1f;
+            if (fraction > 1) fraction = 1;
+            imageView.setTranslationX(evaluateInt(fraction, 0, imageData.imageViewX + imageData.imageViewWidth / 2 - imageView.getWidth() / 2));
+            imageView.setTranslationY(evaluateInt(fraction, 0, imageData.imageViewY + imageData.imageViewHeight / 2 - imageView.getHeight() / 2));
+            imageView.setScaleX(evaluateFloat(fraction, 1, vx));
+            imageView.setScaleY(evaluateFloat(fraction, 1, vy));
+            imageView.setAlpha(1 - fraction);
+            rootView.setBackgroundColor(evaluateArgb(fraction, Color.BLACK, Color.TRANSPARENT));
+        });
+        addOutListener(valueAnimator);
+        valueAnimator.setDuration(ANIMATE_DURATION);
+        valueAnimator.start();
+    }
+
+    /**
+     * 退场动画过程监听
+     */
+    private void addOutListener(ValueAnimator valueAnimator) {
+        valueAnimator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                rootView.setBackgroundColor(0x0);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                finish();
+                overridePendingTransition(0, 0);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+            }
+        });
+    }
+
+
+    /**
      * 进场动画过程监听
      */
     private void addIntoListener(ValueAnimator valueAnimator) {
@@ -245,6 +282,11 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
             public void onAnimationRepeat(Animator animation) {
             }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        finishActivityAnim();
     }
 
     class ImageAdapter extends PagerAdapter {
@@ -345,7 +387,7 @@ public class LargerImageViewActivity extends AppCompatActivity implements ViewTr
             public boolean onResourceReady(GlideDrawable resource, String model, Target<GlideDrawable> target, boolean isFromMemoryCache, boolean isFirstResource) {
                 PhotoView photoView = photoViewSoftReference.get();
                 if (photoView != null) {
-                    photoView.setOnPhotoTapListener((view, v, v1) -> finish());
+                    photoView.setOnPhotoTapListener((view, v, v1) -> finishActivityAnim());
                     photoView.setScaleType(ImageView.ScaleType.FIT_CENTER);
                 }
                 return false;
