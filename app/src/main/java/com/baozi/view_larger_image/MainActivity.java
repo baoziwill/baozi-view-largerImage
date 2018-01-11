@@ -43,6 +43,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mTextMessage = (TextView) findViewById(R.id.message);
         pic_list = (TextView) findViewById(R.id.pic_list);
         pic_list.setOnClickListener(this);
+
+
         BottomNavigationView navigation = (BottomNavigationView) findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
     }
